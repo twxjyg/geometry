@@ -66,7 +66,7 @@ int main(int argc, char ** argv)
 {
   //Initialize ROS
   ros::init(argc, argv,"static_transform_publisher", ros::init_options::AnonymousName);
-
+  ros::NodeHandle n("~");
   if(argc == 11)
   {
     ros::Duration sleeper(atof(argv[10])/1000.0);
@@ -113,6 +113,76 @@ int main(int argc, char ** argv)
 
     return 0;
 
+  }
+  else if (n.hasParam("x") && n.hasParam("y") && n.hasParam("z") &&
+           n.hasParam("yaw") && n.hasParam("pitch") && n.hasParam("roll") &&
+           n.hasParam("period") && n.hasParam("frame_id") && n.hasParam("child_frame_id")) {
+
+    double x, y, z, yaw, pitch, roll, period;
+    std::string frame_id, child_frame_id;
+    n.getParam("x", x);
+    n.getParam("y", y);
+    n.getParam("z", z);
+    n.getParam("yaw", yaw);
+    n.getParam("pitch", pitch);
+    n.getParam("roll", roll);
+    n.getParam("period", period);
+    n.getParam("frame_id", frame_id);
+    n.getParam("child_frame_id", child_frame_id);
+    ros::Duration sleeper(period/1000.0);
+    if (frame_id == child_frame_id)
+      ROS_FATAL("target_frame and source frame are the same (%s, %s) this cannot work", frame_id.c_str(), child_frame_id.c_str());
+
+    TransformSender tf_sender(x, y, z, yaw, pitch, roll,
+                              ros::Time() + sleeper, //Future dating to allow slower sending w/o timeout
+                              frame_id, child_frame_id);
+
+
+
+    while(tf_sender.node_.ok())
+      {
+        tf_sender.send(ros::Time::now() + sleeper);
+        ROS_DEBUG("Sending transform from %s with parent %s\n", frame_id.c_str(), child_frame_id.c_str());
+        sleeper.sleep();
+      }
+
+    return 0;
+  }
+  else if (n.hasParam("x") && n.hasParam("y") && n.hasParam("z") &&
+           n.hasParam("qx") && n.hasParam("qy") && n.hasParam("qz") &&
+           n.hasParam("qw") && n.hasParam("period") &&
+           n.hasParam("frame_id") && n.hasParam("child_frame_id")) {
+
+    double x, y, z, qx, qy, qz, qw, period;
+    std::string frame_id, child_frame_id;
+    n.getParam("x", x);
+    n.getParam("y", y);
+    n.getParam("z", z);
+    n.getParam("qx", qx);
+    n.getParam("qy", qy);
+    n.getParam("qz", qz);
+    n.getParam("qw", qw);
+    n.getParam("period", period);
+    n.getParam("frame_id", frame_id);
+    n.getParam("child_frame_id", child_frame_id);
+    ros::Duration sleeper(period/1000.0);
+    if (frame_id == child_frame_id)
+      ROS_FATAL("target_frame and source frame are the same (%s, %s) this cannot work", frame_id.c_str(), child_frame_id.c_str());
+    TransformSender tf_sender(x, y, z, qx, qy, qz, qw,
+                              ros::Time() + sleeper, //Future dating to allow slower sending w/o timeout
+                              frame_id, child_frame_id);
+
+
+
+    while(tf_sender.node_.ok())
+      {
+        tf_sender.send(ros::Time::now() + sleeper);
+        ROS_DEBUG("Sending transform from %s with parent %s\n", frame_id.c_str(), child_frame_id.c_str());
+        sleeper.sleep();
+      }
+
+    return 0;
+    
   }
   else
   {
